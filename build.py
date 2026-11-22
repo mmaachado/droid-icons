@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Build the droid-icons theme from map.toml.
+"""Build the droid-icons themes from map.toml.
 
-Downloads Material Symbols Rounded (filled) SVGs from Google Fonts, turns
-them into recolourable symbolic icons and writes the theme to droid-icons/.
+Downloads Material Symbols SVGs from Google Fonts, turns them into
+recolourable symbolic icons and writes one theme per style to themes/:
+droid-icons-{rounded,outlined,sharp}[-filled], plus the droid-icons alias
+(rounded, filled).
 
-    python3 -I build.py            build (downloads are cached in .cache/)
-    python3 -I build.py --offline  only use the cache and src/
+    python3 -I build.py                          every style
+    python3 -I build.py --style sharp --fill 0   one style
+    python3 -I build.py --offline                only the cache and src/
 """
 
 from __future__ import annotations
 
+import argparse
 import re
 import shutil
 import sys
@@ -19,11 +23,14 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "droid-icons"
+OUT = HERE / "themes"
 CACHE = HERE / ".cache"
 SRC = HERE / "src"
 
-URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/{name}/{fill}/24px.svg"
+URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbols{family}/{name}/{fill}/24px.svg"
+STYLES = ("rounded", "outlined", "sharp")
+# What the plain droid-icons theme (and droid 1.0) uses.
+DEFAULT = ("rounded", True)
 # Fallback colour when nothing recolours the icon (dark panels, like Tela-circle's).
 TEXT = "#dfdfdf"
 
@@ -36,19 +43,27 @@ CONTEXTS = {
 }
 
 
-def fetch(symbol: str, offline: bool) -> str | None:
+def theme_name(style: str, filled: bool) -> str:
+    return f"droid-icons-{style}" + ("-filled" if filled else "")
+
+
+def fetch(symbol: str, style: str, filled: bool, offline: bool) -> str | None:
     """SVG source of a Material symbol, or None if it doesn't exist.
 
-    `symbol` may end in "@0" for the outlined (FILL 0) variant.
+    `symbol` may end in "@0" (always unfilled) or "@1" (always filled);
+    otherwise the theme's fill is used.
     """
-    name, _, fill = symbol.partition("@")
-    fill = "fill1" if fill != "0" else "default"
-    cached = CACHE / f"{name}.{fill}.svg"
+    name, _, force = symbol.partition("@")
+    if force in ("0", "1"):
+        filled = force == "1"
+    fill = "fill1" if filled else "default"
+    cached = CACHE / style / f"{name}.{fill}.svg"
     if cached.exists():
         return cached.read_text() or None
     if offline:
         return None
-    req = urllib.request.Request(URL.format(name=name, fill=fill), headers={"User-Agent": "droid-icons-build"})
+    url = URL.format(family=style, name=name, fill=fill)
+    req = urllib.request.Request(url, headers={"User-Agent": "droid-icons-build"})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             svg = r.read().decode()
@@ -56,7 +71,7 @@ def fetch(symbol: str, offline: bool) -> str | None:
         if e.code != 404:
             raise
         svg = ""
-    CACHE.mkdir(exist_ok=True)
+    cached.parent.mkdir(parents=True, exist_ok=True)
     cached.write_text(svg)  # empty = known missing
     return svg or None
 
@@ -114,11 +129,12 @@ def load_map() -> list[tuple[str, str, list[str], bool]]:
     return entries
 
 
-def index_theme(dirs: list[str]) -> str:
+def index_theme(style: str, filled: bool, dirs: list[str]) -> str:
+    label = style.capitalize() + (" Filled" if filled else "")
     lines = [
         "[Icon Theme]",
-        "Name=Droid",
-        "Comment=Material Symbols Rounded system icons on top of Tela-circle",
+        f"Name=Droid {label}",
+        f"Comment=Material Symbols {label} system icons on top of Tela-circle",
         "Inherits=Tela-circle,breeze,hicolor",
         "Example=network-wireless-signal-excellent-symbolic",
         "",
@@ -133,43 +149,75 @@ def index_theme(dirs: list[str]) -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
-    offline = "--offline" in sys.argv
-    entries = load_map()
+def build_one(entries, style: str, filled: bool, offline: bool) -> tuple[dict[Path, str], list[str]]:
     missing: list[str] = []
     files: dict[Path, str] = {}
-
     for context, name, symbols, plain in entries:
-        if context not in CONTEXTS:
-            print(f"unknown context {context!r} for {name}", file=sys.stderr)
-            return 1
         base = name.removesuffix("-symbolic")
         own = SRC / f"{base}.svg"
         if own.exists():
             svg = own.read_text()
         else:
-            src = next((s for s in (fetch(sym, offline) for sym in symbols) if s), None)
+            src = next((s for s in (fetch(sym, style, filled, offline) for sym in symbols) if s), None)
             if src is None:
-                missing.append(f"{name} ({', '.join(symbols)})")
+                missing.append(f"{theme_name(style, filled)}: {name} ({', '.join(symbols)})")
                 continue
             svg = symbolic(src)
         d = Path("symbolic") / context
         files[d / f"{base}-symbolic.svg"] = svg
         if plain:
             files[d / f"{base}.svg"] = svg
+    return files, missing
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--style", choices=STYLES, help="build only this style")
+    ap.add_argument("--fill", choices=("0", "1"), help="with --style: unfilled (0) or filled (1); default both")
+    ap.add_argument("--offline", action="store_true", help="only use the download cache and src/")
+    args = ap.parse_args()
+
+    entries = load_map()
+    for context, name, _, _ in entries:
+        if context not in CONTEXTS:
+            print(f"unknown context {context!r} for {name}", file=sys.stderr)
+            return 1
+
+    styles = [args.style] if args.style else list(STYLES)
+    fills = [args.fill == "1"] if args.fill else [True, False]
+    themes: dict[str, dict[Path, str]] = {}
+    missing: list[str] = []
+    for style in styles:
+        for filled in fills:
+            files, miss = build_one(entries, style, filled, args.offline)
+            themes[theme_name(style, filled)] = files
+            missing += miss
+            dirs = sorted({str(p.parent) for p in files})
+            files[Path("index.theme")] = index_theme(style, filled, dirs)
 
     if missing:
         print("Symbols not found:\n  " + "\n  ".join(missing), file=sys.stderr)
         return 1
 
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    for path, svg in files.items():
-        (OUT / path).parent.mkdir(parents=True, exist_ok=True)
-        (OUT / path).write_text(svg)
-    dirs = sorted({str(p.parent) for p in files})
-    (OUT / "index.theme").write_text(index_theme(dirs))
-    print(f"Wrote {len(files)} icons in {len(dirs)} folders to {OUT.relative_to(HERE)}/")
+    for name, files in themes.items():
+        out = OUT / name
+        if out.exists():
+            shutil.rmtree(out)
+        for path, svg in files.items():
+            (out / path).parent.mkdir(parents=True, exist_ok=True)
+            (out / path).write_text(svg)
+        print(f"Wrote {len(files) - 1} icons to themes/{name}/")
+    # droid-icons: the default style under the name droid 1.0 set. A full
+    # copy, because Qt ignores a theme without directories, Inherits and all.
+    default = OUT / theme_name(*DEFAULT)
+    if default.exists():
+        alias = OUT / "droid-icons"
+        if alias.exists():
+            shutil.rmtree(alias)
+        shutil.copytree(default, alias)
+        index = (alias / "index.theme").read_text()
+        index = re.sub(r"^Name=.*$", "Name=Droid\nHidden=true", index, count=1, flags=re.M)
+        (alias / "index.theme").write_text(index)
     return 0
 
 
