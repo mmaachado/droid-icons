@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# Install the droid-icons theme for the current user.
-#   ./install.sh            install to ~/.local/share/icons/droid-icons
+# Install the droid-icons themes (every style) for the current user.
+#   ./install.sh            install themes/* to ~/.local/share/icons/
 #   ./install.sh --build    rebuild from map.toml first (needs network)
 #   ./install.sh --remove   uninstall
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
-DEST="${XDG_DATA_HOME:-$HOME/.local/share}/icons/droid-icons"
+ICONS="${XDG_DATA_HOME:-$HOME/.local/share}/icons"
 
 case "${1:-}" in
     --remove)
-        rm -rf "$DEST"
-        echo "Removed $DEST"
+        for theme in "$HERE"/themes/*/; do
+            rm -rf "${ICONS:?}/$(basename "$theme")"
+        done
+        echo "Removed the droid-icons themes from $ICONS"
         exit 0
         ;;
     --build)
@@ -19,14 +21,19 @@ case "${1:-}" in
         ;;
 esac
 
-[[ -f $HERE/droid-icons/index.theme ]] || { echo "No built theme: run ./install.sh --build" >&2; exit 1; }
-[[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/icons/Tela-circle" || -d /usr/share/icons/Tela-circle ]] \
+compgen -G "$HERE/themes/*/index.theme" >/dev/null || { echo "No built themes: run ./install.sh --build" >&2; exit 1; }
+[[ -d $ICONS/Tela-circle || -d /usr/share/icons/Tela-circle ]] \
     || echo "warning: Tela-circle isn't installed; app icons will fall back to breeze/hicolor" >&2
 
-rm -rf "$DEST"
-mkdir -p "$(dirname "$DEST")"
-cp -r "$HERE/droid-icons" "$DEST"
-command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q -f -t "$DEST" || true
+mkdir -p "$ICONS"
+for theme in "$HERE"/themes/*/; do
+    name=$(basename "$theme")
+    rm -rf "${ICONS:?}/$name"
+    cp -r "$theme" "$ICONS/$name"
+    if [[ -d $ICONS/$name/symbolic ]] && command -v gtk-update-icon-cache >/dev/null; then
+        gtk-update-icon-cache -q -f -t "$ICONS/$name" || true
+    fi
+    echo "Installed $name"
+done
 # Plasma caches icons per theme; drop the cache so changes show up.
 rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/icon-cache.kcache
-echo "Installed to $DEST"
