@@ -1,0 +1,162 @@
+# freedesktop icon name → Material Symbols name (https://fonts.google.com/icons).
+#
+# [plain.<context>]     written as name-symbolic.svg and name.svg
+# [symbolic.<context>]  written as name-symbolic.svg only, so apps asking
+#                       for the plain name keep Tela-circle's icon
+# [levels.<series>]     numbered series (see expand_levels in build.py)
+#
+# A value can be a list of fallbacks; "symbol@0" is the outlined variant.
+
+# ── Network ──────────────────────────────────────────────────────────
+
+[plain.status]
+"network-wireless-signal-excellent" = "signal_wifi_4_bar"
+"network-wireless-signal-good" = "network_wifi_3_bar"
+"network-wireless-signal-ok" = "network_wifi_2_bar"
+"network-wireless-signal-weak" = "network_wifi_1_bar"
+"network-wireless-signal-none" = "signal_wifi_0_bar"
+"network-wireless-connected" = "signal_wifi_4_bar"
+"network-wireless" = "wifi"
+"network-wireless-on" = "wifi"
+"network-wireless-off" = "wifi_off"
+"network-wireless-disabled" = "wifi_off"
+"network-wireless-disconnected" = "signal_wifi_off"
+"network-wireless-offline" = "signal_wifi_off"
+"network-wireless-no-route" = "signal_wifi_bad"
+"network-wireless-acquiring" = "signal_wifi_0_bar"
+"network-wireless-hotspot" = "wifi_tethering"
+"network-wired" = "lan"
+"network-wired-activated" = "lan"
+"network-wired-connected" = "lan"
+"network-wired-acquiring" = "lan@0"
+"network-wired-disconnected" = "lan@0"
+"network-wired-offline" = "lan@0"
+"network-wired-no-route" = "lan@0"
+"network-offline" = "signal_disconnected"
+"network-idle" = "lan"
+"network-transmit-receive" = "lan"
+"network-vpn" = "vpn_key"
+"network-cellular" = "signal_cellular_4_bar"
+"airplane-mode" = "airplanemode_active"
+"network-flightmode-on" = "airplanemode_active"
+
+# ── Bluetooth ────────────────────────────────────────────────────────
+
+"bluetooth" = "bluetooth"
+"bluetooth-active" = "bluetooth"
+"bluetooth-online" = "bluetooth"
+"bluetooth-paired" = "bluetooth_connected"
+"bluetooth-disabled" = "bluetooth_disabled"
+"bluetooth-offline" = "bluetooth_disabled"
+"bluetooth-inactive" = "bluetooth_disabled"
+"network-bluetooth" = "bluetooth"
+"network-bluetooth-activated" = "bluetooth_connected"
+"network-bluetooth-inactive" = "bluetooth_disabled"
+
+# ── Battery and power ────────────────────────────────────────────────
+
+"battery" = "battery_android_frame_full"
+"battery-full" = "battery_android_frame_full"
+"battery-full-charged" = "battery_android_frame_full"
+"battery-full-charging" = "battery_android_frame_bolt"
+"battery-good" = "battery_android_frame_4"
+"battery-good-charging" = "battery_android_frame_bolt"
+"battery-low" = "battery_android_frame_2"
+"battery-low-charging" = "battery_android_frame_bolt"
+"battery-caution" = "battery_android_frame_1"
+"battery-caution-charging" = "battery_android_frame_bolt"
+"battery-empty" = "battery_android_alert"
+"battery-empty-charging" = "battery_android_frame_bolt"
+"battery-missing" = "battery_android_question"
+"battery-ac-adapter" = "power"
+"ac-adapter" = "power"
+"battery-profile-powersave" = "energy_savings_leaf"
+"battery-profile-balanced" = "balance"
+"battery-profile-performance" = "bolt"
+"power-profile-power-saver" = "energy_savings_leaf"
+"power-profile-balanced" = "balance"
+"power-profile-performance" = "bolt"
+
+# ── Sound ────────────────────────────────────────────────────────────
+
+"audio-volume-muted" = "volume_off"
+"audio-volume-low" = "volume_mute"
+"audio-volume-medium" = "volume_down"
+"audio-volume-high-danger" = "volume_up"
+"audio-volume-overamplified" = "volume_up"
+"microphone-sensitivity-muted" = "mic_off"
+"microphone-sensitivity-low" = "mic"
+"microphone-sensitivity-medium" = "mic"
+"microphone-sensitivity-high" = "mic"
+"audio-input-microphone-muted" = "mic_off"
+
+# ── Display ──────────────────────────────────────────────────────────
+
+"display-brightness-off" = "brightness_low"
+"display-brightness-low" = "brightness_low"
+"display-brightness-medium" = "brightness_medium"
+"display-brightness-high" = "brightness_high"
+"display-brightness" = "brightness_medium"
+"night-light" = "nightlight"
+"night-light-disabled" = "nightlight@0"
+
+# ── Notifications ────────────────────────────────────────────────────
+
+"notifications" = "notifications"
+"notifications-disabled" = "notifications_off"
+"notification-active" = "notifications_active"
+"notification-inactive" = "notifications"
+"notification-disabled" = "notifications_off"
+"preferences-desktop-notification-bell" = "notifications"
+
+[plain.devices]
+"audio-speakers" = "speaker"
+"audio-headphones" = "headphones"
+"audio-headset" = "headset_mic"
+"audio-input-microphone" = "mic"
+"audio-card" = "media_output"
+"video-display" = "monitor"
+"computer" = "desktop_windows"
+"input-keyboard" = "keyboard"
+"input-mouse" = "mouse"
+"printer" = "print"
+"drive-removable-media-usb" = "usb"
+"media-optical-audio" = "album"
+
+# Written -symbolic only: kshell's settings window shows the plain
+# audio-volume-high in Tela's colours.
+[symbolic.status]
+"audio-volume-high" = "volume_up"
+
+# ── Numbered series ──────────────────────────────────────────────────
+
+# KDE (battery-040) and GNOME/UPower (battery-level-40) battery levels,
+# drawn like Android 16's status bar: a frame filled in six steps.
+[levels.battery]
+context = "status"
+names = ["battery-{n03}", "battery-level-{n}"]
+steps = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+icons = [
+    [0, "battery_android_alert"],
+    [10, "battery_android_frame_1"],
+    [20, "battery_android_frame_2"],
+    [40, "battery_android_frame_3"],
+    [50, "battery_android_frame_4"],
+    [70, "battery_android_frame_5"],
+    [90, "battery_android_frame_6"],
+    [100, "battery_android_frame_full"],
+]
+suffixes = { "-charging" = "battery_android_frame_bolt", "-charged" = "battery_android_frame_full" }
+
+# plasma-nm signal strengths (network-wireless-60, network-wireless-connected-60).
+[levels.wifi]
+context = "status"
+names = ["network-wireless-{n}", "network-wireless-connected-{n}", "network-wireless-{n02}", "network-wireless-connected-{n02}"]
+steps = [0, 20, 25, 40, 50, 60, 75, 80, 100]
+icons = [
+    [0, "signal_wifi_0_bar"],
+    [20, "network_wifi_1_bar"],
+    [40, "network_wifi_2_bar"],
+    [60, "network_wifi_3_bar"],
+    [80, "signal_wifi_4_bar"],
+]
