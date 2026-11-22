@@ -1,0 +1,44 @@
+[Icon Theme]
+Name=Droid Sharp
+Comment=Material Symbols Sharp system icons on top of Tela-circle
+Inherits=Tela-circle,breeze,hicolor
+Example=network-wireless-signal-excellent-symbolic
+
+# KDE
+FollowsColorScheme=true
+Directories=symbolic/actions,symbolic/apps,symbolic/devices,symbolic/places,symbolic/status
+
+[symbolic/actions]
+Context=Actions
+Size=16
+MinSize=8
+MaxSize=512
+Type=Scalable
+
+[symbolic/apps]
+Context=Applications
+Size=16
+MinSize=8
+MaxSize=512
+Type=Scalable
+
+[symbolic/devices]
+Context=Devices
+Size=16
+MinSize=8
+MaxSize=512
+Type=Scalable
+
+[symbolic/places]
+Context=Places
+Size=16
+MinSize=8
+MaxSize=512
+Type=Scalable
+
+[symbolic/status]
+Context=Status
+Size=16
+MinSize=8
+MaxSize=512
+Type=Scalable
